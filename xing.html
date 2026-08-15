@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D 专属星空</title>
+    <!-- 引入 Swiper 轮播插件 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <style>
+        :root {
+            color-scheme: dark;
+            --text-main: #f8f4ff;
+            --text-soft: #aab7d3;
+            --accent: #ffd39a;
+            --accent-2: #7dd3fc;
+            --panel: rgba(15, 23, 42, 0.62);
+            --panel-strong: rgba(15, 23, 42, 0.82);
+        }
+
+        * { box-sizing: border-box; }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: radial-gradient(circle at top, #1c2a4f 0%, #060816 45%, #000 100%);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            cursor: grab;
+        }
+        body::before, body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+        body::before {
+            background: radial-gradient(circle at 20% 20%, rgba(125, 211, 252, 0.18), transparent 28%),
+                        radial-gradient(circle at 80% 10%, rgba(167, 139, 250, 0.18), transparent 24%),
+                        radial-gradient(circle at 50% 80%, rgba(253, 186, 116, 0.12), transparent 30%);
+            filter: blur(10px);
+            animation: drift 16s ease-in-out infinite alternate;
+        }
+        body::after {
+            background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.03) 50%, transparent 100%);
+            mix-blend-mode: screen;
+            transform: translateX(-20%);
+            animation: shimmer 8s linear infinite;
+        }
+        body:active { cursor: grabbing; }
+
+        #canvas-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: block;
+            z-index: 1;
+        }
+
+        .hud {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .hud .chip {
+            position: absolute;
+            padding: 10px 16px;
+            border-radius: 999px;
+            font-size: 13px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.92);
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.16);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+        }
+        .hud .chip.top-left { top: 20px; left: 20px; }
+        .hud .chip.bottom-right { right: 20px; bottom: 20px; }
+
+        /* 照片模态框 */
+        #imageModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.86);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            cursor: default;
+            padding: 24px;
+        }
+        #imageModal img {
+            max-width: 92%;
+            max-height: 92%;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 22px;
+            box-shadow: 0 0 60px rgba(125, 211, 252, 0.2);
+            object-fit: cover;
+        }
+        #imageModal .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 40px;
+            color: rgba(255,255,255,0.9);
+            cursor: pointer;
+            transition: 0.3s;
+            text-shadow: 0 0 20px rgba(255,255,255,0.3);
+        }
+        #imageModal .close-btn:hover { color: #ffd39a; transform: rotate(90deg); }
+
+        /* 中心恒星 - 纪念小站页面 */
+        #centralPage {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at top left, rgba(125, 211, 252, 0.18), transparent 30%),
+                linear-gradient(135deg, rgba(2, 6, 23, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%);
+            z-index: 999;
+            overflow-y: auto;
+            padding: 40px 20px 70px;
+            box-sizing: border-box;
+            cursor: default;
+        }
+        #centralPage .page-shell {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 24px;
+            border-radius: 32px;
+            background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+            border: 1px solid rgba(255,255,255,0.16);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 25px 70px rgba(0,0,0,0.35);
+            backdrop-filter: blur(20px);
+        }
+        #centralPage h1 {
+            text-align: center;
+            font-size: clamp(2rem, 3.4vw, 3.2rem);
+            color: #f8e8b8;
+            margin: 20px 0 12px;
+            text-shadow: 0 0 30px rgba(247, 215, 148, 0.35);
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+        }
+        #centralPage .subtitle {
+            text-align: center;
+            color: var(--text-soft);
+            margin-bottom: 32px;
+            font-size: 1rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+
+        .back-btn {
+            position: sticky;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.24);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+            z-index: 10;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.24);
+        }
+        .back-btn:hover {
+            background: linear-gradient(135deg, #ffd39a, #fbbf24);
+            color: #09101f;
+            border-color: transparent;
+            transform: translateY(-2px);
+        }
+
+        /* 轮播区 */
+        .swiper {
+            width: 100%;
+            max-width: 860px;
+            height: 470px;
+            margin: 0 auto 48px;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+            border: 1px solid rgba(255,255,255,0.16);
+        }
+        .swiper-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* 视频列表区 */
+        .video-container { max-width: 1000px; margin: 0 auto; }
+        .video-container h2 {
+            text-align: center;
+            margin-bottom: 24px;
+            color: #d7e6ff;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            font-size: 1rem;
+        }
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 22px;
+        }
+        .video-card {
+            background: rgba(255,255,255,0.06);
+            border-radius: 18px;
+            padding: 14px;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.12);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.28);
+        }
+        .video-card video, .video-card iframe {
+            width: 100%;
+            border-radius: 12px;
+            background: #030712;
+            height: 200px;
+            object-fit: cover;
+            border: none;
+        }
+        .video-placeholder {
+            width: 100%;
+            height: 200px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            color: #eef4ff;
+            text-align: center;
+            padding: 20px;
+            font-size: 0.95rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, rgba(125, 211, 252, 0.16), rgba(167, 139, 250, 0.22));
+            border: 1px solid rgba(255,255,255,0.14);
+        }
+        .video-card h3 {
+            margin: 12px 0 0 0;
+            font-size: 1rem;
+            text-align: center;
+            color: #eef4ff;
+        }
+
+        @keyframes drift {
+            from { transform: translate3d(-2%, -1%, 0) scale(1); }
+            to { transform: translate3d(2%, 1%, 0) scale(1.05); }
+        }
+
+        @keyframes shimmer {
+            from { transform: translateX(-40%); }
+            to { transform: translateX(40%); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 3D 渲染容器 -->
+    <div id="canvas-container"></div>
+    <div class="hud">
+        <div class="chip top-left">银河纪念站</div>
+        <div class="chip bottom-right">点击星辰，进入回忆</div>
+    </div>
+
+    <!-- 图片模态弹窗 -->
+    <div id="imageModal">
+        <span class="close-btn" onclick="closeImageModal()">&times;</span>
+        <img id="modalImg" src="" alt="回忆照片">
+    </div>
+
+    <!-- 中央星星对应的纪念小站 -->
+    <div id="centralPage">
+        <div class="page-shell">
+            <button class="back-btn" onclick="closeCentralPage()">✨ 返回宇宙</button>
+            <h1>银河彼岸</h1>
+            <div class="subtitle">—— 献给游戏世界里最特别的你 ——</div>
+
+            <!-- 轮播图区域 -->
+            <div class="swiper mySwiper">
+                <div class="swiper-wrapper" id="swiperWrapper">
+                    <!-- 动态生成 -->
+                </div>
+                <div class="swiper-pagination"></div>
+                <div class="swiper-button-next"></div>
+                <div class="swiper-button-prev"></div>
+            </div>
+
+            <!-- 视频列表区域 -->
+            <div class="video-container">
+                <h2>🎬 独家游戏纪事</h2>
+                <div class="video-grid" id="videoGrid">
+                    <!-- 动态生成 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入 Three.js 和 OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- 引入 Swiper -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+    <script>
+        // ================================================================
+        // ★★★ 你只需要修改下面的素材数组，就能完成整个网站 ★★★
+        // 图片放在 images/ 文件夹，视频放在 videos/ 文件夹。
+        // ================================================================
+
+        function createSvgDataUri(label, colorA, colorB, accent) {
+            const svg = `
+                <svg xmlns='http://www.w3.org/2000/svg' width='800' height='600'>
+                    <defs>
+                        <linearGradient id='g' x1='0%' y1='0%' x2='100%' y2='100%'>
+                            <stop offset='0%' stop-color='${colorA}'/>
+                            <stop offset='100%' stop-color='${colorB}'/>
+                        </linearGradient>
+                    </defs>
+                    <rect width='800' height='600' fill='url(#g)'/>
+                    <circle cx='620' cy='170' r='110' fill='${accent}' fill-opacity='0.35'/>
+                    <circle cx='180' cy='420' r='140' fill='#ffffff' fill-opacity='0.16'/>
+                    <text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='white' font-family='Segoe UI, sans-serif' font-size='44' font-weight='700'>${label}</text>
+                </svg>`;
+            return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+        }
+
+        // 1. 普通星星的图片（点开后显示的图片）
+        const normalStarImages = [
+            'images/q1.png', 'images/q2.png', 'images/q3.png', 'images/q4.png', 'images/q5.png',
+            'images/q6.png', 'images/q7.png', 'images/q8.png', 'images/q9.png', 'images/q10.png',
+            'images/q11.png', 'images/q12.png', 'images/q13.png', 'images/q14.png', 'images/q15.png',
+            'images/q16.png', 'images/q17.png', 'images/q18.png', 'images/q19.png', 'images/q20.png',
+            'images/q21.png', 'images/q22.png', 'images/q23.png', 'images/q24.png', 'images/q25.png',
+            'images/q26.png', 'images/q27.png', 'images/q28.png', 'images/q29.png', 'images/q30.png',
+            'images/q31.png', 'images/q32.png', 'images/q33.png', 'images/q34.png', 'images/q35.png',
+            'images/q36.png', 'images/q37.png', 'images/q38.png', 'images/q39.png', 'images/q40.png'
+        ];
+
+        // 2. 中央巨型恒星点开后的【轮播照片】（q1 ~ q4）
+        const centralCarouselImages = [
+            'images/q1.png',
+            'images/q2.png',
+            'images/q3.png',
+            'images/q4.png'
+        ];
+
+        // 3. 下方的【视频列表】（使用项目内的 actual videos）
+        const videosData = [
+            { title: '我们的第一次战斗', src: 'videos/v1.mp4' },
+            { title: '一起度过的悠闲时光', src: 'videos/v2.mp4' }
+        ];
+
+        // ================================================================
+        // 以下为 3D 核心逻辑，无需修改 (星星数量可改 NUM_STARS)
+        // ================================================================
+        const NUM_STARS = 400; 
+        if(normalStarImages.length === 0) normalStarImages.push('https://via.placeholder.com/200');
+
+        // 初始化 Three.js 场景
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x000000, 0.0002); // 深邃的太空雾效
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 6000);
+        // 入场动画：从远处突进到目标位置
+        const INTRO_START_Z = 4000; // 起始距离（更远）
+        const INTRO_END_Z = 1200;   // 目标距离（与原先一致）
+        const INTRO_DURATION = 1200; // 毫秒
+        camera.position.set(0, 50, INTRO_START_Z);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        // 控制器（右键平移，滚轮缩放）
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;      // 惯性效果
+        controls.dampingFactor = 0.05;
+        // 初始不自动旋转，等入场突进完成后再开启
+        controls.autoRotate = false;
+        controls.autoRotateSpeed = 0.8;
+        controls.mouseButtons = {
+            LEFT: THREE.MOUSE.ROTATE,
+            MIDDLE: THREE.MOUSE.DOLLY,
+            RIGHT: THREE.MOUSE.PAN          // 右键拖拽星空
+        };
+        controls.maxDistance = 3000;
+        controls.minDistance = 200;
+
+        // 入场动画状态
+        let __introStartTime = null;
+        let __introRunning = true;
+
+        // 生成圆形发光纹理
+        function createStarTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            gradient.addColorStop(0.4, 'rgba(255, 255, 255, 0.8)');
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 64, 64);
+            return new THREE.CanvasTexture(canvas);
+        }
+        const starTexture = createStarTexture();
+
+        // 随机颜色池（可点击星星使用）
+        const clickableColors = ['#ff4d4d', '#4d79ff', '#a64dff', '#4dffb8', '#ff7a4d', '#1a8cff', '#cc66ff', '#ff4081'];
+        
+        const starMeshes = [];
+        let prevMouseX = 0, prevMouseY = 0;
+
+        // 生成 3D 星星
+        function generateStars() {
+            let centralStar = null;
+            
+            for(let i=0; i<NUM_STARS; i++) {
+                // 球形散布
+                const radius = 400 + Math.random() * 800;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos((Math.random() * 2) - 1);
+                
+                const x = Math.sin(phi) * Math.cos(theta) * radius;
+                const y = Math.sin(phi) * Math.sin(theta) * radius;
+                const z = Math.cos(phi) * radius;
+
+                const isClickable = Math.random() < 0.2;
+                const material = new THREE.SpriteMaterial({
+                    map: starTexture,
+                    color: isClickable ? clickableColors[Math.floor(Math.random() * clickableColors.length)] : '#ffffff',
+                    transparent: true,
+                    blending: THREE.AdditiveBlending,
+                });
+                const sprite = new THREE.Sprite(material);
+                sprite.position.set(x, y, z);
+
+                const baseScale = isClickable ? 10 + Math.random() * 10 : 1.5 + Math.random() * 2.5;
+                sprite.scale.set(baseScale, baseScale, 1);
+                sprite.userData = {
+                    isCentral: false,
+                    isGold: false,
+                    isClickable,
+                    imageUrl: normalStarImages[Math.floor(Math.random() * normalStarImages.length)]
+                };
+                scene.add(sprite);
+                starMeshes.push(sprite);
+            }
+
+            // 设置中央巨型恒星
+            const centralMat = new THREE.SpriteMaterial({
+                map: starTexture,
+                color: '#ffffff',
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+            });
+            const centralSprite = new THREE.Sprite(centralMat);
+            centralSprite.position.set(0, 0, 0);
+            centralSprite.scale.set(120, 120, 1);
+            centralSprite.userData = {
+                isCentral: true,
+                isClickable: true,
+                imageUrl: null
+            };
+            scene.add(centralSprite);
+            starMeshes.push(centralSprite);
+        }
+        generateStars();
+
+        // 响应窗口变化
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // 循环动画
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // 入场突进动画（线性缓动->使用二次缓出）
+            if(__introRunning) {
+                const now = performance.now();
+                if(!__introStartTime) __introStartTime = now;
+                const t = Math.min(1, (now - __introStartTime) / INTRO_DURATION);
+                const ease = 1 - Math.pow(1 - t, 2); // easeOutQuad
+                camera.position.z = INTRO_START_Z + (INTRO_END_Z - INTRO_START_Z) * ease;
+                if(t >= 1) {
+                    __introRunning = false;
+                    controls.autoRotate = true; // 入场完毕，恢复自动旋转
+                }
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // ============ 交互点击逻辑 ============
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let startX = 0, startY = 0, isClick = false;
+
+        // 区分点击和拖拽
+        renderer.domElement.addEventListener('pointerdown', (e) => {
+            startX = e.clientX; startY = e.clientY; isClick = true;
+        });
+        renderer.domElement.addEventListener('pointermove', (e) => {
+            if (Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5) {
+                isClick = false;
+            }
+        });
+
+        renderer.domElement.addEventListener('pointerup', (e) => {
+            if (!isClick) return; 
+            if (e.button !== 0) return; // 只有左键点击
+
+            // 计算屏幕位置
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+
+            // 检测相交
+            const intersects = raycaster.intersectObjects(starMeshes);
+            if (intersects.length > 0) {
+                const hit = intersects[0].object;
+
+                if (!hit.userData.isClickable && !hit.userData.isCentral) {
+                    return;
+                }
+
+                const color = hit.userData.isCentral ? 0xffd700 : 0xffd700;
+                hit.material.color.setHex(color);
+                hit.material.needsUpdate = true;
+                hit.scale.set(hit.scale.x * 1.3, hit.scale.y * 1.3, 1);
+                
+                if (hit.userData.isCentral) {
+                    showCentralPage();
+                } else {
+                    showImageModal(hit.userData.imageUrl);
+                }
+            }
+        });
+
+        // ============ 模态弹窗逻辑 ============
+        function showImageModal(src) {
+            document.getElementById('modalImg').src = src;
+            document.getElementById('imageModal').style.display = 'flex';
+            controls.autoRotate = false; // 打开弹窗时暂停旋转
+        }
+        window.closeImageModal = function() {
+            document.getElementById('imageModal').style.display = 'none';
+            controls.autoRotate = true;
+        }
+        document.getElementById('imageModal').addEventListener('click', function(e) {
+            if(e.target === this) closeImageModal();
+        });
+
+        function showCentralPage() {
+            document.getElementById('centralPage').style.display = 'block';
+            controls.autoRotate = false;
+            if(!window.swiperInstance && centralCarouselImages.length > 0) {
+                setTimeout(initSwiper, 100);
+            }
+        }
+        window.closeCentralPage = function() {
+            document.getElementById('centralPage').style.display = 'none';
+            controls.autoRotate = true;
+        }
+
+        // ============ 页面内部组件生成 ============
+        function initSwiper() {
+            const wrapper = document.getElementById('swiperWrapper');
+            wrapper.innerHTML = '';
+            centralCarouselImages.forEach(src => {
+                let slide = document.createElement('div');
+                slide.className = 'swiper-slide';
+                slide.innerHTML = `<img src="${src}" alt="回忆">`;
+                wrapper.appendChild(slide);
+            });
+
+            window.swiperInstance = new Swiper(".mySwiper", {
+                loop: true,
+                autoplay: {
+                    delay: 500,
+                    disableOnInteraction: false,
+                },
+                speed: 500,
+                pagination: { el: ".swiper-pagination", clickable: true },
+                navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
+                effect: "coverflow",
+                grabCursor: true,
+                centeredSlides: true,
+                slidesPerView: "auto",
+                coverflowEffect: {
+                    rotate: 50, stretch: 0, depth: 100, modifier: 1, slideShadows: true
+                },
+            });
+        }
+
+        function generateVideoList() {
+            const grid = document.getElementById('videoGrid');
+            grid.innerHTML = '';
+            videosData.forEach(v => {
+                let card = document.createElement('div');
+                card.className = 'video-card';
+                let videoHtml = '';
+
+                if (v.src && v.src.includes('bilibili')) {
+                    videoHtml = `<iframe src="${v.src}" scrolling="no" border="0" frameborder="no" allowfullscreen="true"></iframe>`;
+                } else if (v.src && /\.(mp4|webm)$/i.test(v.src)) {
+                    videoHtml = `<video controls src="${v.src}"></video>`;
+                } else {
+                    videoHtml = `<div class="video-placeholder">${v.title}<br/>回忆片段将会在你替换素材后呈现</div>`;
+                }
+
+                card.innerHTML = `${videoHtml}<h3>${v.title}</h3>`;
+                grid.appendChild(card);
+            });
+        }
+        generateVideoList();
+        
+        // 确保页面生成
+        if(centralCarouselImages.length > 0) initSwiper();
+    </script>
+</body>
+</html>

@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>拜师礼 · 抹茶味百醇饼</title>
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet" />
+    <style>
+        /* ===== 全局重置 & 基础 ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #e8f5e9;
+            color: #1b5e20;
+        }
+
+        /* ===== 页面容器 ===== */
+        .page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
+            padding: 2rem;
+            text-align: center;
+            will-change: opacity, visibility;
+        }
+
+        .page.active {
+            opacity: 1;
+            visibility: visible;
+            z-index: 10;
+        }
+
+        .page.exit {
+            opacity: 0;
+            visibility: hidden;
+            z-index: 5;
+        }
+
+        /* ===== 明朗的绿色系渐变背景 ===== */
+        #page1 {
+            background: radial-gradient(ellipse at 30% 40%, #f1f8e9, #c8e6c9 70%, #a5d6a7);
+        }
+
+        #page2 {
+            background: radial-gradient(ellipse at 70% 60%, #f1f8e9, #b9f6ca 70%, #81c784);
+        }
+
+        #page3 {
+            background: radial-gradient(ellipse at 50% 50%, #e8f5e9, #a5d6a7 70%, #66bb6a);
+        }
+
+        /* ===== 页面内容容器 ===== */
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            max-width: 900px;
+            padding: 1rem;
+            position: relative;
+        }
+
+        /* ===== 第一页 ===== */
+        #page1 .main-title {
+            font-family: 'ZCOOL KuaiLe', 'Noto Sans SC', cursive;
+            font-size: clamp(2.2rem, 8vw, 4.8rem);
+            font-weight: 700;
+            color: #1b5e20;
+            text-shadow: 0 4px 30px rgba(27, 94, 32, 0.12), 0 0 60px rgba(165, 214, 167, 0.4);
+            letter-spacing: 0.06em;
+            line-height: 1.4;
+            animation: fadeInUp 1.6s ease forwards;
+            padding: 0.2em 0;
+        }
+
+        /* ===== 第二页 ===== */
+        #page2 .main-title {
+            font-family: 'ZCOOL KuaiLe', 'Noto Sans SC', cursive;
+            font-size: clamp(2.6rem, 9vw, 5.2rem);
+            font-weight: 700;
+            color: #1b5e20;
+            text-shadow: 0 4px 40px rgba(27, 94, 32, 0.10);
+            letter-spacing: 0.04em;
+            line-height: 1.3;
+            opacity: 0;
+            transform: translateY(-120vh) scale(0.7);
+        }
+
+        #page2 .main-title.smash {
+            animation: smashIn 1.4s cubic-bezier(0.22, 0.68, 0.35, 1.1) forwards;
+        }
+
+        #page2 .sub-title {
+            font-family: 'Noto Sans SC', 'PingFang SC', sans-serif;
+            font-size: clamp(1.2rem, 4vw, 2.4rem);
+            font-weight: 400;
+            color: #2e7d32;
+            text-shadow: 0 2px 20px rgba(46, 125, 50, 0.08);
+            letter-spacing: 0.12em;
+            margin-top: 0.8rem;
+            opacity: 0;
+            transform: translateY(24px);
+            transition: none;
+        }
+
+        #page2 .sub-title.fade-up {
+            animation: fadeUp 1.2s ease forwards;
+            animation-delay: 1.6s;
+        }
+
+        /* ===== 第三页 ===== */
+        #page3 .tip-line {
+            font-family: 'Noto Sans SC', 'PingFang SC', sans-serif;
+            font-size: clamp(1.6rem, 5vw, 3.4rem);
+            font-weight: 400;
+            color: #1b5e20;
+            text-shadow: 0 2px 30px rgba(27, 94, 32, 0.08);
+            letter-spacing: 0.08em;
+            line-height: 1.6;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        /* 第二行文本更大 */
+        #page3 .tip-line:nth-child(2) {
+            font-size: clamp(2.2rem, 6.5vw, 4.4rem);
+            font-weight: 500;
+            letter-spacing: 0.06em;
+        }
+
+        /* 出现动画 */
+        #page3 .tip-line.show {
+            animation: fadeUp 1.4s ease forwards;
+        }
+
+        /* 向上淡出（第一行） - 移动至少25vh */
+        #page3 .tip-line.hide-up {
+            animation: fadeUpOut 1.6s ease forwards;
+        }
+
+        /* 向下淡出（第二行） - 移动至少25vh */
+        #page3 .tip-line.hide-down {
+            animation: fadeDown 1.6s ease forwards;
+        }
+
+        #page3 .tip-line:nth-child(1) {
+            animation-delay: 0.2s;
+        }
+        #page3 .tip-line:nth-child(2) {
+            animation-delay: 0s;
+        }
+
+        /* ===== 右下角提示 - 明亮风格 ===== */
+        .hint {
+            position: fixed;
+            bottom: 2.4rem;
+            right: 2.4rem;
+            font-family: 'Noto Sans SC', 'PingFang SC', sans-serif;
+            font-size: clamp(0.85rem, 2vw, 1.15rem);
+            font-weight: 400;
+            color: #1b5e20;
+            letter-spacing: 0.06em;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 0.6rem 1.2rem;
+            border-radius: 30px;
+            border: 1px solid rgba(27, 94, 32, 0.12);
+            box-shadow: 0 4px 24px rgba(27, 94, 32, 0.08);
+            opacity: 0;
+            transform: scale(0.92);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+            z-index: 100;
+            cursor: default;
+            user-select: none;
+            pointer-events: none;
+        }
+
+        .hint.show {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+            animation: breathe 2.4s ease-in-out infinite;
+        }
+
+        .hint.hidden-permanent {
+            display: none;
+        }
+
+        /* ===== 呼吸动画 - 明亮阴影 ===== */
+        @keyframes breathe {
+            0%,
+            100% {
+                opacity: 0.75;
+                transform: scale(0.97);
+                box-shadow: 0 4px 24px rgba(27, 94, 32, 0.06);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.04);
+                box-shadow: 0 6px 36px rgba(27, 94, 32, 0.14);
+            }
+        }
+
+        /* ===== 第一页主标题入场 ===== */
+        @keyframes fadeInUp {
+            0% {
+                opacity: 0;
+                transform: translateY(30px) scale(0.96);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* ===== 第二页「砸下来」 ===== */
+        @keyframes smashIn {
+            0% {
+                opacity: 0;
+                transform: translateY(-120vh) scale(0.6) rotate(-2deg);
+            }
+            30% {
+                opacity: 1;
+                transform: translateY(8vh) scale(1.12) rotate(0.5deg);
+            }
+            50% {
+                transform: translateY(-3vh) scale(0.96) rotate(-0.3deg);
+            }
+            65% {
+                transform: translateY(2vh) scale(1.03) rotate(0.2deg);
+            }
+            80% {
+                transform: translateY(-0.8vh) scale(0.99);
+            }
+            92% {
+                transform: translateY(0.3vh) scale(1.01);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1) rotate(0deg);
+            }
+        }
+
+        /* ===== 浮现（上浮+淡入） ===== */
+        @keyframes fadeUp {
+            0% {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== 向上淡出（第一行） ===== */
+        @keyframes fadeUpOut {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-30vh);
+            }
+        }
+
+        /* ===== 向下淡出（第二行） ===== */
+        @keyframes fadeDown {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(30vh);
+            }
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 640px) {
+            .page {
+                padding: 1.2rem;
+            }
+
+            .hint {
+                bottom: 1.6rem;
+                right: 1.6rem;
+                padding: 0.4rem 1rem;
+                font-size: clamp(0.7rem, 2.2vw, 0.9rem);
+                border-radius: 24px;
+            }
+
+            #page1 .main-title {
+                font-size: clamp(1.8rem, 7vw, 3.2rem);
+            }
+
+            #page2 .main-title {
+                font-size: clamp(2rem, 8vw, 3.6rem);
+            }
+
+            #page2 .sub-title {
+                font-size: clamp(1rem, 3.6vw, 1.8rem);
+                margin-top: 0.6rem;
+            }
+
+            #page3 .tip-line {
+                font-size: clamp(1.2rem, 4.5vw, 2.4rem);
+            }
+            #page3 .tip-line:nth-child(2) {
+                font-size: clamp(1.8rem, 6vw, 3.2rem);
+            }
+        }
+
+        @media (max-width: 400px) {
+            .page {
+                padding: 0.8rem;
+            }
+
+            .hint {
+                bottom: 1rem;
+                right: 1rem;
+                padding: 0.3rem 0.8rem;
+                font-size: clamp(0.6rem, 2vw, 0.75rem);
+                border-radius: 20px;
+            }
+
+            #page1 .main-title {
+                font-size: clamp(1.4rem, 6vw, 2.4rem);
+            }
+
+            #page2 .main-title {
+                font-size: clamp(1.6rem, 7vw, 2.8rem);
+            }
+
+            #page2 .sub-title {
+                font-size: clamp(0.9rem, 3vw, 1.4rem);
+            }
+
+            #page3 .tip-line {
+                font-size: clamp(1rem, 4vw, 1.8rem);
+            }
+            #page3 .tip-line:nth-child(2) {
+                font-size: clamp(1.4rem, 5.5vw, 2.6rem);
+            }
+        }
+
+        @media (orientation: landscape) and (max-height: 500px) {
+            .page {
+                padding: 0.8rem 2rem;
+            }
+
+            #page1 .main-title {
+                font-size: clamp(1.6rem, 5vh, 3rem);
+            }
+
+            #page2 .main-title {
+                font-size: clamp(1.8rem, 6vh, 3.4rem);
+            }
+
+            #page2 .sub-title {
+                font-size: clamp(0.9rem, 2.5vh, 1.6rem);
+                margin-top: 0.3rem;
+            }
+
+            #page3 .tip-line {
+                font-size: clamp(1rem, 3vh, 2rem);
+            }
+            #page3 .tip-line:nth-child(2) {
+                font-size: clamp(1.4rem, 4vh, 2.8rem);
+            }
+
+            .hint {
+                bottom: 0.8rem;
+                right: 1.2rem;
+                padding: 0.2rem 0.8rem;
+                font-size: clamp(0.6rem, 1.6vh, 0.85rem);
+            }
+        }
+
+        @supports (padding: max(0px)) {
+            .hint {
+                bottom: max(1.2rem, env(safe-area-inset-bottom, 1.2rem));
+                right: max(1.2rem, env(safe-area-inset-right, 1.2rem));
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== 第一页 ===== -->
+    <div id="page1" class="page active">
+        <div class="content">
+            <div class="main-title">
+                给抹茶味百醇饼的<br />一周年拜师礼
+            </div>
+        </div>
+        <div id="hint1" class="hint">✦ 点击任意按键跳转 ✦</div>
+    </div>
+
+    <!-- ===== 第二页 ===== -->
+    <div id="page2" class="page">
+        <div class="content">
+            <div id="smashTitle" class="main-title">怎么可能这么简单</div>
+            <div id="subTitle" class="sub-title">准备迎接挑战吧</div>
+        </div>
+        <div id="hint2" class="hint">✦ 点击任意按键跳转 ✦</div>
+    </div>
+
+    <!-- ===== 第三页 ===== -->
+    <div id="page3" class="page">
+        <div class="content" id="page3Content">
+            <div class="tip-line" id="tip1">温馨提示：</div>
+            <div class="tip-line" id="tip2">拿到一万分即可通关</div>
+        </div>
+        <!-- 第三页没有跳转提示 -->
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ---- DOM 引用 ----
+            const page1 = document.getElementById('page1');
+            const page2 = document.getElementById('page2');
+            const page3 = document.getElementById('page3');
+
+            const hint1 = document.getElementById('hint1');
+            const hint2 = document.getElementById('hint2');
+
+            const smashTitle = document.getElementById('smashTitle');
+            const subTitle = document.getElementById('subTitle');
+
+            const tip1 = document.getElementById('tip1');
+            const tip2 = document.getElementById('tip2');
+            const page3Content = document.getElementById('page3Content');
+
+            // ---- 状态 ----
+            let currentPage = 1;
+            let isTransitioning = false;
+            let page3Timer = null;
+            let isPage3Done = false;
+            let jumpScheduled = false; // 防止重复跳转
+
+            // ---- 辅助：隐藏所有提示 ----
+            function hideAllHints() {
+                hint1.classList.remove('show', 'hidden-permanent');
+                hint2.classList.remove('show', 'hidden-permanent');
+                hint1.style.display = '';
+                hint2.style.display = '';
+            }
+
+            // ---- 显示提示（带延迟） ----
+            function showHint(hintEl, delay) {
+                delay = delay || 400;
+                setTimeout(function() {
+                    hintEl.classList.add('show');
+                }, delay);
+            }
+
+            // ---- 切换页面 ----
+            function goToPage(pageNum) {
+                if (isTransitioning) return;
+                if (pageNum === currentPage) return;
+                if (pageNum === 3 && isPage3Done) return;
+
+                isTransitioning = true;
+
+                hideAllHints();
+
+                const oldPage = document.getElementById('page' + currentPage);
+                oldPage.classList.remove('active');
+                oldPage.classList.add('exit');
+
+                const newPage = document.getElementById('page' + pageNum);
+                newPage.classList.remove('exit');
+                newPage.classList.add('active');
+
+                currentPage = pageNum;
+
+                // ---- 进入第二页 ----
+                if (pageNum === 2) {
+                    smashTitle.classList.remove('smash');
+                    subTitle.classList.remove('fade-up');
+                    void smashTitle.offsetWidth;
+                    void subTitle.offsetWidth;
+
+                    smashTitle.style.opacity = '0';
+                    smashTitle.style.transform = 'translateY(-120vh) scale(0.7)';
+                    subTitle.style.opacity = '0';
+                    subTitle.style.transform = 'translateY(24px)';
+
+                    requestAnimationFrame(function() {
+                        smashTitle.classList.add('smash');
+                        subTitle.classList.add('fade-up');
+                    });
+
+                    const totalDelay = 1400 + 1200 + 300;
+                    showHint(hint2, totalDelay);
+
+                    setTimeout(function() {
+                        isTransitioning = false;
+                    }, totalDelay + 200);
+
+                } else if (pageNum === 3) {
+                    // ---- 进入第三页：调整后的间隔和双向淡出 ----
+                    // 重置状态
+                    tip1.classList.remove('show', 'hide-up', 'hide-down');
+                    tip2.classList.remove('show', 'hide-up', 'hide-down');
+                    tip1.style.opacity = '0';
+                    tip2.style.opacity = '0';
+                    tip1.style.transform = 'translateY(10px)';
+                    tip2.style.transform = 'translateY(10px)';
+
+                    // 清除旧定时器
+                    if (page3Timer) {
+                        clearTimeout(page3Timer);
+                        page3Timer = null;
+                    }
+                    isPage3Done = false;
+                    jumpScheduled = false;
+
+                    // 强制重排
+                    void tip1.offsetWidth;
+                    void tip2.offsetWidth;
+
+                    // ---- 时间参数 ----
+                    const firstDelay = 300; // 第一行出现延迟
+                    const secondDelay = 800; // 第二行相对于第一行出现的间隔
+                    const showDuration = 1400; // 出现动画持续时间
+                    const buffer = 400; // 显示停留缓冲
+                    const hideDuration = 1600; // 消失动画持续时间
+
+                    // 第一行出现
+                    setTimeout(function() {
+                        tip1.classList.add('show');
+                    }, firstDelay);
+
+                    // 第二行出现（间隔减小）
+                    setTimeout(function() {
+                        tip2.classList.add('show');
+                    }, firstDelay + secondDelay);
+
+                    // 计算消失开始时间
+                    const hideStart = firstDelay + secondDelay + showDuration + buffer;
+
+                    // 同时消失：第一行向上淡出，第二行向下淡出
+                    setTimeout(function() {
+                        tip1.classList.remove('show');
+                        tip1.classList.add('hide-up');   // 向上
+                        tip2.classList.remove('show');
+                        tip2.classList.add('hide-down'); // 向下
+                    }, hideStart);
+
+                    // 在完全消失后 0.5 秒跳转到 min.html
+                    const jumpDelay = hideStart + hideDuration + 500;
+                    setTimeout(function() {
+                        if (!jumpScheduled) {
+                            jumpScheduled = true;
+                            // 确保页面已经显示完毕，防止提前跳转
+                            window.location.href = 'radius-raid-js13k/radius-raid-js13k-master/min.html';
+                        }
+                    }, jumpDelay);
+
+                    // 标记完成（用于防止重复进入第三页动画）
+                    const doneTime = hideStart + hideDuration + 200;
+                    setTimeout(function() {
+                        isPage3Done = true;
+                        isTransitioning = false;
+                    }, doneTime);
+
+                    // 安全释放锁
+                    setTimeout(function() {
+                        if (isTransitioning) {
+                            isTransitioning = false;
+                        }
+                    }, doneTime + 500);
+
+                    // 第三页没有跳转提示
+                    hint2.classList.add('hidden-permanent');
+
+                } else if (pageNum === 1) {
+                    showHint(hint1, 500);
+                    setTimeout(function() {
+                        isTransitioning = false;
+                    }, 700);
+                }
+            }
+
+            // ---- 重置第二页 ----
+            function resetPage2() {
+                smashTitle.classList.remove('smash');
+                subTitle.classList.remove('fade-up');
+                smashTitle.style.opacity = '0';
+                smashTitle.style.transform = 'translateY(-120vh) scale(0.7)';
+                subTitle.style.opacity = '0';
+                subTitle.style.transform = 'translateY(24px)';
+                hint2.classList.remove('show');
+            }
+
+            // ---- 事件：点击任意键跳转 ----
+            function handleJump() {
+                if (isTransitioning) return;
+
+                if (currentPage === 1) {
+                    resetPage2();
+                    goToPage(2);
+                } else if (currentPage === 2) {
+                    if (hint2.classList.contains('show') && !isTransitioning) {
+                        goToPage(3);
+                    }
+                }
+                // 第三页无跳转
+            }
+
+            // ---- 监听键盘 & 鼠标 & 触摸 ----
+            document.addEventListener('keydown', function(e) {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                handleJump();
+            });
+
+            document.addEventListener('click', function(e) {
+                handleJump();
+            });
+
+            document.addEventListener('touchstart', function(e) {
+                if (isTransitioning) return;
+                handleJump();
+            }, { passive: true });
+
+            // ---- 页面加载完成 ----
+            window.addEventListener('load', function() {
+                setTimeout(function() {
+                    hint1.classList.add('show');
+                }, 600);
+            });
+
+            document.addEventListener('touchmove', function(e) {
+                e.preventDefault();
+            }, { passive: false });
+
+            // ---- 初始化 ----
+            page1.classList.add('active');
+            page1.classList.remove('exit');
+            page2.classList.remove('active', 'exit');
+            page3.classList.remove('active', 'exit');
+
+            resetPage2();
+            hideAllHints();
+
+            console.log('🍵 抹茶味百醇饼 · 一周年拜师礼 (双向淡出+跳转)');
+            console.log('✨ 点击任意按键或点击屏幕跳转');
+            console.log('📌 第三页：第一行向上淡出，第二行向下淡出，完全消失后0.5秒跳转到 mim.html');
+
+        })();
+    </script>
+
+</body>
+</html>
