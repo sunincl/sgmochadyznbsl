@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <title>拜师礼 · 抹茶味百醇饼</title>
+    <title>抹茶味百醇饼拜师礼</title>
     <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet" />
     <style>
         /* ===== 全局重置 & 基础 ===== */
@@ -148,6 +148,11 @@
             letter-spacing: 0.06em;
         }
 
+        #page3 .tip-line:nth-child(n + 3) {
+            font-size: clamp(1.25rem, 4vw, 2.8rem);
+            letter-spacing: 0.06em;
+        }
+
         /* 出现动画 */
         #page3 .tip-line.show {
             animation: fadeUp 1.4s ease forwards;
@@ -168,6 +173,15 @@
         }
         #page3 .tip-line:nth-child(2) {
             animation-delay: 0s;
+        }
+        #page3 .tip-line:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+        #page3 .tip-line:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+        #page3 .tip-line:nth-child(5) {
+            animation-delay: 0.6s;
         }
 
         /* ===== 右下角提示 - 明亮风格 ===== */
@@ -433,8 +447,11 @@
         <div class="content" id="page3Content">
             <div class="tip-line" id="tip1">温馨提示：</div>
             <div class="tip-line" id="tip2">拿到一万分即可通关</div>
+            <div class="tip-line" id="tip3">w a s d  控制移动</div>
+            <div class="tip-line" id="tip4">左键攻击</div>
+            <div class="tip-line" id="tip5">可以通过接触不同的方形获得技能</div>
         </div>
-        <!-- 第三页没有跳转提示 -->
+        <div id="hint3" class="hint">✦ 点击任意按键进入游戏 ✦</div>
     </div>
 
     <script>
@@ -448,27 +465,31 @@
 
             const hint1 = document.getElementById('hint1');
             const hint2 = document.getElementById('hint2');
+            const hint3 = document.getElementById('hint3');
 
             const smashTitle = document.getElementById('smashTitle');
             const subTitle = document.getElementById('subTitle');
 
             const tip1 = document.getElementById('tip1');
             const tip2 = document.getElementById('tip2');
+            const tip3 = document.getElementById('tip3');
+            const tip4 = document.getElementById('tip4');
+            const tip5 = document.getElementById('tip5');
             const page3Content = document.getElementById('page3Content');
 
             // ---- 状态 ----
             let currentPage = 1;
             let isTransitioning = false;
-            let page3Timer = null;
             let isPage3Done = false;
-            let jumpScheduled = false; // 防止重复跳转
 
             // ---- 辅助：隐藏所有提示 ----
             function hideAllHints() {
                 hint1.classList.remove('show', 'hidden-permanent');
                 hint2.classList.remove('show', 'hidden-permanent');
+                hint3.classList.remove('show', 'hidden-permanent');
                 hint1.style.display = '';
                 hint2.style.display = '';
+                hint3.style.display = '';
             }
 
             // ---- 显示提示（带延迟） ----
@@ -528,18 +549,21 @@
                     // 重置状态
                     tip1.classList.remove('show', 'hide-up', 'hide-down');
                     tip2.classList.remove('show', 'hide-up', 'hide-down');
+                    tip3.classList.remove('show', 'hide-up', 'hide-down');
+                    tip4.classList.remove('show', 'hide-up', 'hide-down');
+                    tip5.classList.remove('show', 'hide-up', 'hide-down');
                     tip1.style.opacity = '0';
                     tip2.style.opacity = '0';
+                    tip3.style.opacity = '0';
+                    tip4.style.opacity = '0';
+                    tip5.style.opacity = '0';
                     tip1.style.transform = 'translateY(10px)';
                     tip2.style.transform = 'translateY(10px)';
+                    tip3.style.transform = 'translateY(10px)';
+                    tip4.style.transform = 'translateY(10px)';
+                    tip5.style.transform = 'translateY(10px)';
 
-                    // 清除旧定时器
-                    if (page3Timer) {
-                        clearTimeout(page3Timer);
-                        page3Timer = null;
-                    }
                     isPage3Done = false;
-                    jumpScheduled = false;
 
                     // 强制重排
                     void tip1.offsetWidth;
@@ -549,8 +573,6 @@
                     const firstDelay = 300; // 第一行出现延迟
                     const secondDelay = 800; // 第二行相对于第一行出现的间隔
                     const showDuration = 1400; // 出现动画持续时间
-                    const buffer = 400; // 显示停留缓冲
-                    const hideDuration = 1600; // 消失动画持续时间
 
                     // 第一行出现
                     setTimeout(function() {
@@ -562,43 +584,21 @@
                         tip2.classList.add('show');
                     }, firstDelay + secondDelay);
 
-                    // 计算消失开始时间
-                    const hideStart = firstDelay + secondDelay + showDuration + buffer;
+                    // 三条操作说明依次显示在得分提示下方
+                    [tip3, tip4, tip5].forEach(function(tip, index) {
+                        setTimeout(function() {
+                            tip.classList.add('show');
+                        }, firstDelay + secondDelay + showDuration + index * 200);
+                    });
 
-                    // 同时消失：第一行向上淡出，第二行向下淡出
-                    setTimeout(function() {
-                        tip1.classList.remove('show');
-                        tip1.classList.add('hide-up');   // 向上
-                        tip2.classList.remove('show');
-                        tip2.classList.add('hide-down'); // 向下
-                    }, hideStart);
-
-                    // 在完全消失后 0.5 秒跳转到 min.html
-                    const jumpDelay = hideStart + hideDuration + 500;
-                    setTimeout(function() {
-                        if (!jumpScheduled) {
-                            jumpScheduled = true;
-                            // 确保页面已经显示完毕，防止提前跳转
-                            window.location.href = 'radius-raid-js13k/radius-raid-js13k-master/min.html';
-                        }
-                    }, jumpDelay);
-
-                    // 标记完成（用于防止重复进入第三页动画）
-                    const doneTime = hideStart + hideDuration + 200;
+                    // 所有说明显示完成后，等待用户点击进入游戏
+                    const instructionsStart = firstDelay + secondDelay + showDuration;
+                    const doneTime = instructionsStart + 2 * 200 + 600 + showDuration + 400;
+                    showHint(hint3, doneTime);
                     setTimeout(function() {
                         isPage3Done = true;
                         isTransitioning = false;
                     }, doneTime);
-
-                    // 安全释放锁
-                    setTimeout(function() {
-                        if (isTransitioning) {
-                            isTransitioning = false;
-                        }
-                    }, doneTime + 500);
-
-                    // 第三页没有跳转提示
-                    hint2.classList.add('hidden-permanent');
 
                 } else if (pageNum === 1) {
                     showHint(hint1, 500);
@@ -630,8 +630,9 @@
                     if (hint2.classList.contains('show') && !isTransitioning) {
                         goToPage(3);
                     }
+                } else if (currentPage === 3 && hint3.classList.contains('show')) {
+                    window.location.href = 'radius-raid-js13k/radius-raid-js13k-master/min.html';
                 }
-                // 第三页无跳转
             }
 
             // ---- 监听键盘 & 鼠标 & 触摸 ----
