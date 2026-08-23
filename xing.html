@@ -333,23 +333,34 @@
 
         // 1. 普通星星的图片（点开后显示的图片）
         const normalStarImages = [
-            'images/q1.png', 'images/q2.png', 'images/q3.png', 'images/q4.png', 'images/q5.png',
-            'images/q6.png', 'images/q7.png', 'images/q8.png', 'images/q9.png', 'images/q10.png',
-            'images/q11.png', 'images/q12.png', 'images/q13.png', 'images/q14.png', 'images/q15.png',
-            'images/q16.png', 'images/q17.png', 'images/q18.png', 'images/q19.png', 'images/q20.png',
-            'images/q21.png', 'images/q22.png', 'images/q23.png', 'images/q24.png', 'images/q25.png',
-            'images/q26.png', 'images/q27.png', 'images/q28.png', 'images/q29.png', 'images/q30.png',
-            'images/q31.png', 'images/q32.png', 'images/q33.png', 'images/q34.png', 'images/q35.png',
-            'images/q36.png', 'images/q37.png', 'images/q38.png', 'images/q39.png', 'images/q40.png'
+            'images/q1.webp', 'images/q2.webp', 'images/q3.webp', 'images/q4.webp', 'images/q5.webp',
+            'images/q6.webp', 'images/q7.webp', 'images/q8.webp', 'images/q9.webp', 'images/q10.webp',
+            'images/q11.webp', 'images/q12.webp', 'images/q13.webp', 'images/q14.webp', 'images/q15.webp',
+            'images/q16.webp', 'images/q17.webp', 'images/q18.webp', 'images/q19.webp', 'images/q20.webp',
+            'images/q21.webp', 'images/q22.webp', 'images/q23.webp', 'images/q24.webp', 'images/q25.webp',
+            'images/q26.webp', 'images/q27.webp', 'images/q28.webp', 'images/q29.webp', 'images/q30.webp',
+            'images/q31.webp', 'images/q32.webp', 'images/q33.webp', 'images/q34.webp', 'images/q35.webp',
+            'images/q36.webp', 'images/q37.webp', 'images/q38.webp', 'images/q39.webp', 'images/q40.webp'
         ];
 
         // 2. 中央巨型恒星点开后的【轮播照片】（q1 ~ q4）
         const centralCarouselImages = [
-            'images/q1.png',
-            'images/q2.png',
-            'images/q3.png',
-            'images/q4.png'
+            'images/q1.webp',
+            'images/q2.webp',
+            'images/q3.webp',
+            'images/q4.webp'
         ];
+
+        // 首页后台启动 xing 时立即把所有照片放入浏览器缓存
+        function preloadImages(imageUrls) {
+            imageUrls.forEach(function(url) {
+                const image = new Image();
+                image.decoding = 'async';
+                image.src = url;
+            });
+        }
+
+        preloadImages(normalStarImages);
 
         // 3. 下方的【视频列表】（使用项目内的 actual videos）
         const videosData = [
