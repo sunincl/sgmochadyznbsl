@@ -23,6 +23,17 @@
             color: #1b5e20;
         }
 
+        #xingPreload {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            opacity: 0;
+            pointer-events: none;
+            z-index: -1;
+        }
+
         /* ===== 页面容器 ===== */
         .page {
             position: fixed;
@@ -422,6 +433,8 @@
     </style>
 </head>
 <body>
+
+    <iframe id="xingPreload" src="xing.html" title="后台预加载星空页面" aria-hidden="true"></iframe>
 
     <!-- ===== 第一页 ===== -->
     <div id="page1" class="page active">
