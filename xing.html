@@ -86,7 +86,7 @@
             display: none;
             position: fixed;
             inset: 0;
-            background: #ffffff;
+            background: rgba(2, 6, 23, 0.86);
             justify-content: center;
             align-items: center;
             z-index: 1000;
@@ -195,6 +195,12 @@
             height: 100%;
             object-fit: cover;
             display: block;
+        }
+        .swiper-button-next,
+        .swiper-button-prev {
+            z-index: 5;
+            cursor: pointer;
+            pointer-events: auto;
         }
 
         /* 视频列表区 */
@@ -399,7 +405,7 @@
         controls.dampingFactor = 0.05;
         // 初始不自动旋转，等入场突进完成后再开启
         controls.autoRotate = false;
-        controls.autoRotateSpeed = 0.8;
+        controls.autoRotateSpeed = 0.25;
         controls.mouseButtons = {
             LEFT: THREE.MOUSE.ROTATE,
             MIDDLE: THREE.MOUSE.DOLLY,
@@ -579,10 +585,16 @@
         });
 
         function showCentralPage() {
-            document.getElementById('centralPage').style.display = 'block';
+            const centralPage = document.getElementById('centralPage');
+            centralPage.style.display = 'block';
             controls.autoRotate = false;
             if(!window.swiperInstance && centralCarouselImages.length > 0) {
-                setTimeout(initSwiper, 100);
+                requestAnimationFrame(initSwiper);
+            } else if(window.swiperInstance) {
+                requestAnimationFrame(function() {
+                    window.swiperInstance.update();
+                    window.swiperInstance.autoplay.start();
+                });
             }
         }
         window.closeCentralPage = function() {
@@ -604,7 +616,7 @@
             window.swiperInstance = new Swiper(".mySwiper", {
                 loop: true,
                 autoplay: {
-                    delay: 500,
+                    delay: 3000,
                     disableOnInteraction: false,
                 },
                 speed: 500,
@@ -641,9 +653,6 @@
             });
         }
         generateVideoList();
-        
-        // 确保页面生成
-        if(centralCarouselImages.length > 0) initSwiper();
     </script>
 </body>
 </html>
