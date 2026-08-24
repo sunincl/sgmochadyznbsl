@@ -382,6 +382,28 @@
         const NUM_STARS = 400; 
         if(normalStarImages.length === 0) normalStarImages.push('https://via.placeholder.com/200');
 
+        // 前 40 次普通星星点击使用一组随机洗牌后的照片，之后允许重复随机。
+        let remainingNormalStarImages = [];
+        let normalStarClickCount = 0;
+        function refillNormalStarImageQueue() {
+            remainingNormalStarImages = normalStarImages.slice();
+            for (let index = remainingNormalStarImages.length - 1; index > 0; index--) {
+                const randomIndex = Math.floor(Math.random() * (index + 1));
+                [remainingNormalStarImages[index], remainingNormalStarImages[randomIndex]] =
+                    [remainingNormalStarImages[randomIndex], remainingNormalStarImages[index]];
+            }
+        }
+        function getNextNormalStarImage() {
+            if (normalStarClickCount >= normalStarImages.length) {
+                return normalStarImages[Math.floor(Math.random() * normalStarImages.length)];
+            }
+            if (remainingNormalStarImages.length === 0) {
+                refillNormalStarImageQueue();
+            }
+            normalStarClickCount++;
+            return remainingNormalStarImages.pop();
+        }
+
         // 初始化 Three.js 场景
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
@@ -468,8 +490,7 @@
                 sprite.userData = {
                     isCentral: false,
                     isGold: false,
-                    isClickable,
-                    imageUrl: normalStarImages[Math.floor(Math.random() * normalStarImages.length)]
+                    isClickable
                 };
                 scene.add(sprite);
                 starMeshes.push(sprite);
@@ -565,6 +586,9 @@
                 if (hit.userData.isCentral) {
                     showCentralPage();
                 } else {
+                    if (!hit.userData.imageUrl) {
+                        hit.userData.imageUrl = getNextNormalStarImage();
+                    }
                     showImageModal(hit.userData.imageUrl);
                 }
             }
